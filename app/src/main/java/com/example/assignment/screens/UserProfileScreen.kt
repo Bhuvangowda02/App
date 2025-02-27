@@ -35,6 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,24 +60,31 @@ import kotlinx.coroutines.launch
 fun UserProfileScreen(userPreferences: UserPreferences) {
     val coroutineScope = rememberCoroutineScope()
 
-    var storedName by remember { mutableStateOf(TextFieldValue("")) }
-    var storedEmail by remember { mutableStateOf(TextFieldValue("")) }
-    var storedPhone by remember { mutableStateOf(TextFieldValue("")) }
-    var profilePicUri by remember { mutableStateOf<Uri?>(null) }
+    // Collect DataStore values as state so they update automatically when changed.
+    val storedNameDS by userPreferences.getUserName.collectAsState(initial = "John Doe")
+    val storedEmailDS by userPreferences.getUserEmail.collectAsState(initial = "john.doe@example.com")
+    val storedPhoneDS by userPreferences.getUserPhone.collectAsState(initial = "+123 456 7890")
+    val storedProfilePicDS by userPreferences.getUserProfilePic.collectAsState(initial = "")
+
+    // Local mutable state for text fields, initially set to the collected values.
+    var storedName by remember { mutableStateOf(TextFieldValue(storedNameDS)) }
+    var storedEmail by remember { mutableStateOf(TextFieldValue(storedEmailDS)) }
+    var storedPhone by remember { mutableStateOf(TextFieldValue(storedPhoneDS)) }
+    var profilePicUri by remember { mutableStateOf<Uri?>(if (storedProfilePicDS.isNotEmpty()) Uri.parse(storedProfilePicDS) else null) }
     var emailError by remember { mutableStateOf(false) }
     var phoneError by remember { mutableStateOf(false) }
     var isUpdated by remember { mutableStateOf(false) }
     var portfolioValue by remember { mutableStateOf("10,000.00") } // Default Portfolio Value
 
-    LaunchedEffect(Unit) {
-        userPreferences.getUserName.collect { storedName = TextFieldValue(it) }
-        userPreferences.getUserEmail.collect { storedEmail = TextFieldValue(it) }
-        userPreferences.getUserPhone.collect { storedPhone = TextFieldValue(it) }
-        userPreferences.getUserProfilePic.collect { uri ->
-            profilePicUri = uri.takeIf { it.isNotEmpty() }?.let { Uri.parse(it) }
-        }
+    // When DataStore values update, update the local state.
+    LaunchedEffect(storedNameDS) { storedName = TextFieldValue(storedNameDS) }
+    LaunchedEffect(storedEmailDS) { storedEmail = TextFieldValue(storedEmailDS) }
+    LaunchedEffect(storedPhoneDS) { storedPhone = TextFieldValue(storedPhoneDS) }
+    LaunchedEffect(storedProfilePicDS) {
+        profilePicUri = if (storedProfilePicDS.isNotEmpty()) Uri.parse(storedProfilePicDS) else null
     }
 
+    // Launcher to pick an image for profile picture.
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let { selectedUri ->
             profilePicUri = selectedUri
@@ -85,9 +93,7 @@ fun UserProfileScreen(userPreferences: UserPreferences) {
         }
     }
 
-    Scaffold(
-
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -106,12 +112,12 @@ fun UserProfileScreen(userPreferences: UserPreferences) {
             ProfileEditableField("Email", storedEmail, isError = emailError, errorMessage = "Invalid email format", onValueChange = {
                 storedEmail = it
                 emailError = !Patterns.EMAIL_ADDRESS.matcher(it.text).matches()
-                isUpdated = !emailError
+                isUpdated = true
             })
             ProfileEditableField("Phone", storedPhone, isError = phoneError, errorMessage = "Invalid phone number", onValueChange = {
                 storedPhone = it
                 phoneError = it.text.length < 10 || !Patterns.PHONE.matcher(it.text).matches()
-                isUpdated = !phoneError
+                isUpdated = true
             })
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -175,7 +181,9 @@ fun ProfilePicture(uri: Uri?, onClick: () -> Unit) {
             AsyncImage(
                 model = it,
                 contentDescription = "Profile Picture",
-                modifier = Modifier.size(140.dp).clip(CircleShape)
+                modifier = Modifier
+                    .size(140.dp)
+                    .clip(CircleShape)
             )
         } ?: Image(
             painter = painterResource(id = R.drawable.ic_profile_placeholder),
@@ -211,7 +219,9 @@ fun ProfileEditableField(
             label = { Text(label) },
             singleLine = true,
             isError = isError,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
             textStyle = TextStyle(fontSize = 16.sp),
             trailingIcon = {
                 if (isError) Icon(Icons.Default.Error, contentDescription = "Error", tint = Color.Red)
@@ -219,7 +229,12 @@ fun ProfileEditableField(
             }
         )
         if (isError) {
-            Text(text = errorMessage, color = Color.Red, fontSize = 12.sp, style = MaterialTheme.typography.bodySmall)
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                fontSize = 12.sp,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }

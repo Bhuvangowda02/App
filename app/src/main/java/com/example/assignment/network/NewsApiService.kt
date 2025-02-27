@@ -11,24 +11,24 @@ object ApiConstants {
     const val BASE_URL = "https://news.google.com/rss/search?q="
 }
 
-// ✅ Define API Service for Google News RSS
+// Define API Service for Google News RSS
 interface NewsApiService {
     @GET
     suspend fun getStockNews(@Url url: String): Response<RSSFeed>
 }
 
-// ✅ Retrofit Instance for Google News RSS
+//  Retrofit Instance for Google News RSS
 object RetrofitInstance {
     val api: NewsApiService by lazy {
         Retrofit.Builder()
             .baseUrl(ApiConstants.BASE_URL)
-            .addConverterFactory(SimpleXmlConverterFactory.create()) // ✅ Use XML Converter for RSS
+            .addConverterFactory(SimpleXmlConverterFactory.create()) // Use XML Converter for RSS
             .build()
             .create(NewsApiService::class.java)
     }
 }
 
-// ✅ Data Classes for Parsing XML from Google News RSS
+//  Data Classes for Parsing XML from Google News RSS
 @org.simpleframework.xml.Root(name = "rss", strict = false)
 data class RSSFeed(
     @org.simpleframework.xml.Element(name = "channel")

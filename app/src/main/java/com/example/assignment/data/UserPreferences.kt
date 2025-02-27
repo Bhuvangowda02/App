@@ -34,35 +34,63 @@ class UserPreferences(context: Context) {
 
     // Fetch user data with error handling
     val getUserName: Flow<String> = dataStore.data
-        .catch { exception -> if (exception is IOException) emit(emptyPreferences()) }
-        .map { it[USER_NAME_KEY] ?: DEFAULT_NAME }
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences())
+            else throw exception
+        }
+        .map { preferences ->
+            preferences[USER_NAME_KEY] ?: DEFAULT_NAME
+        }
 
     val getUserEmail: Flow<String> = dataStore.data
-        .catch { exception -> if (exception is IOException) emit(emptyPreferences()) }
-        .map { it[USER_EMAIL_KEY] ?: DEFAULT_EMAIL }
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences())
+            else throw exception
+        }
+        .map { preferences ->
+            preferences[USER_EMAIL_KEY] ?: DEFAULT_EMAIL
+        }
 
     val getUserPhone: Flow<String> = dataStore.data
-        .catch { exception -> if (exception is IOException) emit(emptyPreferences()) }
-        .map { it[USER_PHONE_KEY] ?: DEFAULT_PHONE }
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences())
+            else throw exception
+        }
+        .map { preferences ->
+            preferences[USER_PHONE_KEY] ?: DEFAULT_PHONE
+        }
 
     val getUserProfilePic: Flow<String> = dataStore.data
-        .catch { exception -> if (exception is IOException) emit(emptyPreferences()) }
-        .map { it[USER_PROFILE_PIC_KEY] ?: DEFAULT_PROFILE_PIC }
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences())
+            else throw exception
+        }
+        .map { preferences ->
+            preferences[USER_PROFILE_PIC_KEY] ?: DEFAULT_PROFILE_PIC
+        }
 
     // Save functions with exception handling
     suspend fun saveUserName(name: String) {
-        dataStore.edit { it[USER_NAME_KEY] = name }
+        dataStore.edit { preferences ->
+            preferences[USER_NAME_KEY] = name
+        }
     }
 
     suspend fun saveUserEmail(email: String) {
-        dataStore.edit { it[USER_EMAIL_KEY] = email }
+        dataStore.edit { preferences ->
+            preferences[USER_EMAIL_KEY] = email
+        }
     }
 
     suspend fun saveUserPhone(phone: String) {
-        dataStore.edit { it[USER_PHONE_KEY] = phone }
+        dataStore.edit { preferences ->
+            preferences[USER_PHONE_KEY] = phone
+        }
     }
 
     suspend fun saveUserProfilePic(uri: String) {
-        dataStore.edit { it[USER_PROFILE_PIC_KEY] = uri }
+        dataStore.edit { preferences ->
+            preferences[USER_PROFILE_PIC_KEY] = uri
+        }
     }
 }

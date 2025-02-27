@@ -13,12 +13,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
-import com.example.assignment.screens.Stock
+import com.example.assignment.model.Stock
+
 import kotlin.random.Random
 
 @Composable
 fun StockGraph(stock: Stock) {
-    val prices = generateCandlestickData(stock.price)
+    val prices = generateCandlestickData(stock.close)
+
 
     Card(
         modifier = Modifier
